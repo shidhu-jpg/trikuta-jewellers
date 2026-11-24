@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin · Trikuta Fine Jewels</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1a1410;--cream:#faf6ef;--paper:#f3ebdd;--gold:#b8892f;--gold-2:#d9b25f;--gold-soft:#efe0bd;--muted:#6e6357;--line:rgba(184,137,47,.28);--ok:#2f7d4f;--err:#b23b3b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Jost',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh}
+h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:700}
+header{background:var(--ink);color:var(--cream);padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:1.4rem;color:var(--gold-2)}
+header small{display:block;font-family:'Jost';font-size:.7rem;letter-spacing:.2em;color:#bfb3a2;text-transform:uppercase}
+header a,header button{color:var(--gold-soft);font-size:.8rem;background:none;border:1px solid var(--gold-2);padding:7px 12px;cursor:pointer;font-family:inherit;text-decoration:none}
+main{max-width:720px;margin:0 auto;padding:24px 18px 60px}
+.card{background:#fff;border:1px solid var(--line);padding:22px 20px;margin-bottom:18px}
+.card h2{font-size:1.5rem;margin-bottom:4px}
+.card p.sub{color:var(--muted);font-size:.88rem;margin-bottom:16px}
+label{display:block;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+input{width:100%;padding:12px;border:1px solid #dcd2c1;background:var(--cream);font-family:inherit;font-size:1.05rem;outline:none}
+input:focus{border-color:var(--gold)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.field{position:relative}
+.field .unit{position:absolute;right:10px;bottom:12px;font-size:.8rem;color:var(--muted)}
+.field .per10{font-size:.75rem;color:var(--muted);margin-top:4px}
+.btn{display:inline-block;padding:13px 22px;font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;font-weight:500;border:1px solid var(--gold);background:var(--gold);color:#fff;cursor:pointer;font-family:inherit}
+.btn:disabled{opacity:.5;cursor:wait}
+.btn.line{background:#fff;color:var(--gold)}
+.btn.full{width:100%}
+.row-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.msg{display:none;padding:12px 14px;margin-top:14px;font-size:.9rem}
+.msg.ok{display:block;background:#e6f3ea;color:var(--ok)}
+.msg.err{display:block;background:#f8e5e5;color:var(--err)}
+.status{display:flex;justify-content:space-between;align-items:center;background:var(--paper);border:1px solid var(--line);padding:12px 16px;margin-bottom:18px;font-size:.88rem}
+.status b{color:var(--gold)}
+.help{font-size:.84rem;color:var(--muted);line-height:1.6}
+.help ol{padding-left:20px;margin:8px 0}
+.check{display:flex;align-items:center;gap:8px;margin:12px 0;font-size:.88rem;color:var(--muted)}
+.check input{width:auto}
+#app{display:none}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Trikuta Fine Jewels</h1><small>Rate Admin</small></div>
+  <div><a href="./" target="_blank">View site</a> <button id="logout" style="display:none">Logout</button></div>
+</header>
+
+<main>
+  <!-- LOGIN -->
+  <div id="login" class="card">
+    <h2>Admin Login</h2>
+    <p class="sub">Enter your admin access key to update today's rates.</p>
+    <label>Access Key</label>
+    <input id="key" type="password" autocomplete="current-password" placeholder="github_pat_...">
+    <label class="check"><input type="checkbox" id="remember" checked> Remember on this device</label>
+    <button class="btn full" id="loginBtn">Login</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="app">
+    <div class="status"><span>Last updated: <b id="last">—</b></span><span id="sync"></span></div>
+
+    <div class="card">
+      <h2>Gold Rate</h2>
+      <p class="sub">Price per gram (₹). Enter 24K, then tap auto-fill for 22K &amp; 18K, or type each one yourself.</p>
+      <div class="grid">
+        <div class="field"><label>24K (999)</label><input type="number" id="g24" min="0" step="1"><span class="unit">/g</span><div class="per10" data-for="g24"></div></div>
+        <div class="field"><label>22K (916)</label><input type="number" id="g22" min="0" step="1"><span class="unit">/g</span><div class="per10" data-for="g22"></div></div>
+        <div class="field"><label>18K (750)</label><input type="number" id="g18" min="0" step="1"><span class="unit">/g</span><div class="per10" data-for="g18"></div></div>
+      </div>
+      <div class="row-actions"><button class="btn line" id="autoGold">Auto-fill 22K &amp; 18K from 24K</button></div>
+    </div>
+
+    <div class="card">
+      <h2>Silver Rate</h2>
+      <p class="sub">Price per gram (₹).</p>
+      <div class="grid2">
+        <div class="field"><label>Fine Silver (999)</label><input type="number" id="s999" min="0" step="1"><span class="unit">/g</span><div class="per10" data-for="s999" data-kg="1"></div></div>
+        <div class="field"><label>Sterling (925)</label><input type="number" id="s925" min="0" step="1"><span class="unit">/g</span><div class="per10" data-for="s925" data-kg="1"></div></div>
+      </div>
+      <div class="row-actions"><button class="btn line" id="autoSilver">Auto-fill 925 from 999</button></div>
+    </div>
+
+    <div class="card">
+      <h2>Making Charges</h2>
+      <p class="sub">Default % shown in the website's price calculator.</p>
+      <div class="grid">
+        <div class="field"><label>Gold</label><input type="number" id="mg" min="0" step="0.5"><span class="unit">%</span></div>
+        <div class="field"><label>Silver</label><input type="number" id="ms" min="0" step="0.5"><span class="unit">%</span></div>
+        <div class="field"><label>Diamond</label><input type="number" id="md" min="0" step="0.5"><span class="unit">%</span></div>
+      </div>
+    </div>
+
+    <button class="btn full" id="save">Save &amp; Publish Rates</button>
+    <div class="msg" id="saveMsg"></div>
+  </div>
+
+  <div class="card help" id="setup">
+    <h3 style="font-size:1.2rem;color:var(--ink)">Access key kaise banaye (one-time)</h3>
+    <ol>
+      <li>GitHub → Settings → Developer settings → Fine-grained tokens → <b>Generate new token</b></li>
+      <li>Repository access: <b>Only select repositories → trikuta-jewellers</b></li>
+      <li>Permissions → Repository → <b>Contents: Read and write</b> (kuch aur nahi)</li>
+      <li>Token copy karke yahan login mein paste karo</li>
+    </ol>
+    Saved rates website par 1–2 minute mein dikhne lagte hain.
+  </div>
+</main>
+
+<script>
+const OWNER='shidhu-jpg', REPO='trikuta-jewellers', PATH='rates.json', BRANCH='main';
+const API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
+const $=id=>document.getElementById(id);
+const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+let token='', sha='', data=null;
+
+function store(){try{return localStorage}catch(e){return null}}
+function msg(el,text,type){el.className='msg '+type;el.textContent=text}
+const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\n/g,''))));
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+
+async function gh(method,body){
+  const r=await fetch(API+(method==='GET'?`?ref=${BRANCH}&t=${Date.now()}`:''),{
+    method,headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(body?{'Content-Type':'application/json'}:{})},
+    body:body?JSON.stringify(body):undefined,cache:'no-store'});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(r.status===401||r.status===403?'Access key galat hai ya permission nahi hai.':(j.message||('Error '+r.status)));
+  return j;
+}
+
+async function load(){
+  const j=await gh('GET'); sha=j.sha; data=JSON.parse(b64dec(j.content));
+  $('g24').value=data.gold['24K (999)']; $('g22').value=data.gold['22K (916)']; $('g18').value=data.gold['18K (750)'];
+  $('s999').value=data.silver['Fine Silver (999)']; $('s925').value=data.silver['Sterling (925)'];
+  const m=data.making||{}; $('mg').value=m.gold??12; $('ms').value=m.silver??10; $('md').value=m.diamond??15;
+  $('last').textContent=data.updatedAt?new Date(data.updatedAt).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}):'—';
+  refreshHints();
+}
+
+async function login(k){
+  token=k.trim(); if(!token) return msg($('loginMsg'),'Access key daalo.','err');
+  $('loginBtn').disabled=true;
+  try{
+    await load();
+    if($('remember').checked) store()?.setItem('tfj_key',token);
+    $('login').style.display='none'; $('setup').style.display='none'; $('app').style.display='block'; $('logout').style.display='inline-block';
+  }catch(e){ msg($('loginMsg'),e.message,'err'); store()?.removeItem('tfj_key'); }
+  $('loginBtn').disabled=false;
+}
+
+function refreshHints(){
+  document.querySelectorAll('.per10').forEach(d=>{
+    const v=+$(d.dataset.for).value||0;
+    d.textContent=v?(d.dataset.kg?inr(v*1000)+' / kg':inr(v*10)+' / 10g'):'';
+  });
+}
+
+async function save(){
+  const n=id=>Math.round(+$(id).value);
+  const vals=['g24','g22','g18','s999','s925'].map(n);
+  if(vals.some(v=>!v||v<=0)) return msg($('saveMsg'),'Saare rates bharo (0 se zyada).','err');
+  if(!(vals[0]>vals[1]&&vals[1]>vals[2])) return msg($('saveMsg'),'Check karo: 24K > 22K > 18K hona chahiye.','err');
+  if(vals[3]<vals[4]) return msg($('saveMsg'),'Check karo: 999 silver ka rate 925 se zyada hona chahiye.','err');
+  const next={
+    updatedAt:new Date().toISOString(),
+    gold:{'24K (999)':vals[0],'22K (916)':vals[1],'18K (750)':vals[2]},
+    silver:{'Fine Silver (999)':vals[3],'Sterling (925)':vals[4]},
+    making:{gold:+$('mg').value||0,silver:+$('ms').value||0,diamond:+$('md').value||0}
+  };
+  $('save').disabled=true; $('save').textContent='Saving…';
+  try{
+    // re-read latest sha to avoid conflicts
+    const cur=await gh('GET'); sha=cur.sha;
+    const res=await gh('PUT',{message:`Update rates: 22K ₹${vals[1]}/g, silver ₹${vals[3]}/g`,content:b64enc(JSON.stringify(next,null,2)+'\n'),sha,branch:BRANCH});
+    sha=res.content.sha; data=next;
+    $('last').textContent=new Date(next.updatedAt).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+    msg($('saveMsg'),'✓ Rates saved. Website par 1–2 minute mein update ho jayenge.','ok');
+  }catch(e){ msg($('saveMsg'),'Save nahi hua: '+e.message,'err'); }
+  $('save').disabled=false; $('save').textContent='Save & Publish Rates';
+}
+
+$('loginBtn').onclick=()=>login($('key').value);
+$('key').addEventListener('keydown',e=>{if(e.key==='Enter')login($('key').value)});
+$('logout').onclick=()=>{store()?.removeItem('tfj_key');location.reload()};
+$('save').onclick=save;
+$('autoGold').onclick=()=>{const g=+$('g24').value;if(!g)return;$('g22').value=Math.round(g*0.916);$('g18').value=Math.round(g*0.75);refreshHints()};
+$('autoSilver').onclick=()=>{const s=+$('s999').value;if(!s)return;$('s925').value=Math.round(s*0.925);refreshHints()};
+document.querySelectorAll('input[type=number]').forEach(i=>i.addEventListener('input',refreshHints));
+const saved=store()?.getItem('tfj_key'); if(saved){$('key').value=saved;login(saved)}
+</script>
+</body>
+</html>

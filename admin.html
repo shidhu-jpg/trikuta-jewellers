@@ -53,15 +53,29 @@ input:focus{border-color:var(--gold)}
 
 <main>
   <!-- LOGIN -->
-  <div id="login" class="card">
+  <div id="login" class="card" style="display:none">
     <h2>Admin Login</h2>
-    <p class="sub">Enter your admin access key to update today's rates.</p>
-    <label>Access Key</label>
-    <input id="key" type="password" autocomplete="current-password" placeholder="github_pat_...">
+    <p class="sub">Password daal ke login karo aur aaj ke rates update karo.</p>
+    <label>Password</label>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Password">
     <label class="check"><input type="checkbox" id="remember" checked> Remember on this device</label>
     <button class="btn full" id="loginBtn">Login</button>
     <div class="msg" id="loginMsg"></div>
   </div>
+
+  <!-- ONE-TIME SETUP -->
+  <div id="setupCard" class="card" style="display:none">
+    <h2>One-time Setup</h2>
+    <p class="sub">Sirf pehli baar: admin password aur GitHub access key daalo. Key password se encrypt hokar save hogi — uske baad har device par sirf password se login hoga.</p>
+    <label>Admin Password</label>
+    <input id="newPw" type="password" autocomplete="new-password" value="">
+    <label style="margin-top:12px">GitHub Access Key</label>
+    <input id="setupKey" type="password" placeholder="github_pat_...">
+    <button class="btn full" id="setupBtn" style="margin-top:14px">Save Setup &amp; Login</button>
+    <div class="msg" id="setupMsg"></div>
+  </div>
+
+  <div id="loading" class="card"><p class="sub" style="margin:0">Loading…</p></div>
 
   <!-- DASHBOARD -->
   <div id="app">
@@ -98,11 +112,17 @@ input:focus{border-color:var(--gold)}
       </div>
     </div>
 
+    <details class="card" style="padding:16px 20px">
+      <summary style="cursor:pointer;font-weight:500">Change admin password</summary>
+      <div style="margin-top:14px"><label>New Password</label><input id="chPw" type="password" autocomplete="new-password">
+      <button class="btn line" id="chBtn" style="margin-top:10px">Update Password</button><div class="msg" id="chMsg"></div></div>
+    </details>
+
     <button class="btn full" id="save">Save &amp; Publish Rates</button>
     <div class="msg" id="saveMsg"></div>
   </div>
 
-  <div class="card help" id="setup">
+  <div class="card help" id="setup" style="display:none">
     <h3 style="font-size:1.2rem;color:var(--ink)">Access key kaise banaye (one-time)</h3>
     <ol>
       <li>GitHub → Settings → Developer settings → Fine-grained tokens → <b>Generate new token</b></li>
@@ -115,44 +135,105 @@ input:focus{border-color:var(--gold)}
 </main>
 
 <script>
-const OWNER='shidhu-jpg', REPO='trikuta-jewellers', PATH='rates.json', BRANCH='main';
-const API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
+const OWNER='shidhu-jpg', REPO='trikuta-jewellers', BRANCH='main';
+const API=p=>`https://api.github.com/repos/${OWNER}/${REPO}/contents/${p}`;
+const CFG='admin-config.json';
 const $=id=>document.getElementById(id);
 const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
-let token='', sha='', data=null;
+let token='', data=null, cfg=null;
 
 function store(){try{return localStorage}catch(e){return null}}
 function msg(el,text,type){el.className='msg '+type;el.textContent=text}
 const b64dec=s=>decodeURIComponent(escape(atob(s.replace(/\n/g,''))));
 const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+const toB64=buf=>btoa(String.fromCharCode(...new Uint8Array(buf)));
+const fromB64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const show=id=>['login','setupCard','loading','app','setup'].forEach(x=>$(x).style.display=(Array.isArray(id)?id:[id]).includes(x)?'block':'none');
 
-async function gh(method,body){
-  const r=await fetch(API+(method==='GET'?`?ref=${BRANCH}&t=${Date.now()}`:''),{
+// ---- crypto: GitHub key encrypted with admin password (PBKDF2 + AES-GCM) ----
+const ITER=600000;
+async function deriveKey(pw,salt){
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:ITER,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encryptToken(pw,tok){
+  const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},await deriveKey(pw,salt),new TextEncoder().encode(tok));
+  return {v:1,iter:ITER,salt:toB64(salt),iv:toB64(iv),data:toB64(ct)};
+}
+async function decryptToken(pw,c){
+  const k=await deriveKey(pw,fromB64(c.salt));
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(c.iv)},k,fromB64(c.data));
+  return new TextDecoder().decode(pt);
+}
+
+// ---- GitHub contents API ----
+async function gh(path,method='GET',body){
+  const r=await fetch(API(path)+(method==='GET'?`?ref=${BRANCH}&t=${Date.now()}`:''),{
     method,headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(body?{'Content-Type':'application/json'}:{})},
     body:body?JSON.stringify(body):undefined,cache:'no-store'});
   const j=await r.json().catch(()=>({}));
-  if(!r.ok) throw new Error(r.status===401||r.status===403?'Access key galat hai ya permission nahi hai.':(j.message||('Error '+r.status)));
+  if(r.status===404&&method==='GET') return null;
+  if(!r.ok) throw new Error(r.status===401||r.status===403?'GitHub access key galat hai ya permission nahi hai.':(j.message||('Error '+r.status)));
   return j;
 }
+async function putFile(path,obj,message){
+  const cur=await gh(path);
+  return gh(path,'PUT',{message,content:b64enc(JSON.stringify(obj,null,2)+'\n'),branch:BRANCH,...(cur?{sha:cur.sha}:{})});
+}
 
-async function load(){
-  const j=await gh('GET'); sha=j.sha; data=JSON.parse(b64dec(j.content));
+async function fetchConfig(){
+  const urls=[`${CFG}?t=${Date.now()}`,`https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${CFG}?t=${Date.now()}`];
+  for(const u of urls){ try{const r=await fetch(u,{cache:'no-store'}); if(r.ok){const j=await r.json(); if(j&&j.data) return j;}}catch(e){} }
+  return null;
+}
+
+// ---- dashboard ----
+async function loadRates(){
+  const j=await gh('rates.json'); data=JSON.parse(b64dec(j.content));
   $('g24').value=data.gold['24K (999)']; $('g22').value=data.gold['22K (916)']; $('g18').value=data.gold['18K (750)'];
   $('s999').value=data.silver['Fine Silver (999)']; $('s925').value=data.silver['Sterling (925)'];
   const m=data.making||{}; $('mg').value=m.gold??12; $('ms').value=m.silver??10; $('md').value=m.diamond??15;
   $('last').textContent=data.updatedAt?new Date(data.updatedAt).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}):'—';
   refreshHints();
 }
+async function enterApp(remember){
+  await loadRates();
+  if(remember) store()?.setItem('tfj_key',token); else store()?.removeItem('tfj_key');
+  show('app'); $('logout').style.display='inline-block';
+}
 
-async function login(k){
-  token=k.trim(); if(!token) return msg($('loginMsg'),'Access key daalo.','err');
-  $('loginBtn').disabled=true;
+async function login(){
+  const pw=$('pw').value; if(!pw) return msg($('loginMsg'),'Password daalo.','err');
+  $('loginBtn').disabled=true; $('loginBtn').textContent='Checking…';
   try{
-    await load();
-    if($('remember').checked) store()?.setItem('tfj_key',token);
-    $('login').style.display='none'; $('setup').style.display='none'; $('app').style.display='block'; $('logout').style.display='inline-block';
-  }catch(e){ msg($('loginMsg'),e.message,'err'); store()?.removeItem('tfj_key'); }
-  $('loginBtn').disabled=false;
+    try{ token=await decryptToken(pw,cfg); }catch(e){ throw new Error('Password galat hai.'); }
+    await enterApp($('remember').checked);
+  }catch(e){ msg($('loginMsg'),e.message,'err'); }
+  $('loginBtn').disabled=false; $('loginBtn').textContent='Login';
+}
+
+async function setup(){
+  const pw=$('newPw').value, k=$('setupKey').value.trim();
+  if(pw.length<6) return msg($('setupMsg'),'Password kam se kam 6 characters ka rakho.','err');
+  if(!k) return msg($('setupMsg'),'GitHub access key daalo.','err');
+  $('setupBtn').disabled=true; $('setupBtn').textContent='Saving…';
+  try{
+    token=k; if(!(await gh('rates.json'))) throw new Error('rates.json repo mein nahi mili.');
+    cfg=await encryptToken(pw,k);
+    await putFile(CFG,cfg,'Admin setup: save encrypted access key');
+    await enterApp(true);
+    msg($('saveMsg'),'✓ Setup ho gaya. Ab har device par sirf password se login hoga (1–2 min baad).','ok');
+  }catch(e){ msg($('setupMsg'),e.message,'err'); }
+  $('setupBtn').disabled=false; $('setupBtn').textContent='Save Setup & Login';
+}
+
+async function changePw(){
+  const pw=$('chPw').value; if(pw.length<6) return msg($('chMsg'),'Password kam se kam 6 characters ka rakho.','err');
+  $('chBtn').disabled=true;
+  try{ cfg=await encryptToken(pw,token); await putFile(CFG,cfg,'Admin: change password'); msg($('chMsg'),'✓ Password badal gaya (1–2 min mein har jagah lagu).','ok'); $('chPw').value=''; }
+  catch(e){ msg($('chMsg'),e.message,'err'); }
+  $('chBtn').disabled=false;
 }
 
 function refreshHints(){
@@ -176,24 +257,30 @@ async function save(){
   };
   $('save').disabled=true; $('save').textContent='Saving…';
   try{
-    // re-read latest sha to avoid conflicts
-    const cur=await gh('GET'); sha=cur.sha;
-    const res=await gh('PUT',{message:`Update rates: 22K ₹${vals[1]}/g, silver ₹${vals[3]}/g`,content:b64enc(JSON.stringify(next,null,2)+'\n'),sha,branch:BRANCH});
-    sha=res.content.sha; data=next;
+    await putFile('rates.json',next,`Update rates: 22K ₹${vals[1]}/g, silver ₹${vals[3]}/g`);
+    data=next;
     $('last').textContent=new Date(next.updatedAt).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
     msg($('saveMsg'),'✓ Rates saved. Website par 1–2 minute mein update ho jayenge.','ok');
   }catch(e){ msg($('saveMsg'),'Save nahi hua: '+e.message,'err'); }
   $('save').disabled=false; $('save').textContent='Save & Publish Rates';
 }
 
-$('loginBtn').onclick=()=>login($('key').value);
-$('key').addEventListener('keydown',e=>{if(e.key==='Enter')login($('key').value)});
+$('loginBtn').onclick=login;
+$('pw').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+$('setupBtn').onclick=setup;
+$('chBtn').onclick=changePw;
 $('logout').onclick=()=>{store()?.removeItem('tfj_key');location.reload()};
 $('save').onclick=save;
 $('autoGold').onclick=()=>{const g=+$('g24').value;if(!g)return;$('g22').value=Math.round(g*0.916);$('g18').value=Math.round(g*0.75);refreshHints()};
 $('autoSilver').onclick=()=>{const s=+$('s999').value;if(!s)return;$('s925').value=Math.round(s*0.925);refreshHints()};
 document.querySelectorAll('input[type=number]').forEach(i=>i.addEventListener('input',refreshHints));
-const saved=store()?.getItem('tfj_key'); if(saved){$('key').value=saved;login(saved)}
+
+(async()=>{
+  const saved=store()?.getItem('tfj_key');
+  if(saved){ token=saved; try{ await enterApp(true); return; }catch(e){ store()?.removeItem('tfj_key'); token=''; } }
+  cfg=await fetchConfig();
+  if(cfg){ show('login'); $('pw').focus(); } else { show(['setupCard','setup']); }
+})();
 </script>
 </body>
 </html>

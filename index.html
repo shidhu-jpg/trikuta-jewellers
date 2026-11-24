@@ -184,6 +184,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold)}
 .tabs button.on{background:var(--gold);color:#fff}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .calc-box .hint{font-size:.78rem;color:var(--muted);margin:-10px 0 14px}
+.fixed{width:100%;padding:12px 14px;border:1px solid var(--line);background:var(--gold-soft);font-size:.95rem;font-weight:500;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.fixed small{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:400}
 .result{background:var(--ink);color:var(--cream);padding:32px 30px;position:sticky;top:90px}
 .result h3{font-size:1.6rem;color:var(--gold-2);margin-bottom:16px}
 .line{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px dashed rgba(217,178,95,.25);font-size:.95rem;color:#d6cbbb}
@@ -301,12 +303,12 @@ footer a:hover{color:var(--gold-2)}
           <div class="rate-date" id="rdate"></div>
           <div class="row2">
             <div><label id="purityLbl">Purity</label><select id="purity"></select></div>
-            <div><label>Rate (₹ / gram)</label><input id="rate" type="number" min="0" step="1"></div>
+            <div><label>Today's Rate (₹ / gram)</label><div class="fixed"><span id="rate">—</span><small>Fixed</small></div></div>
           </div>
-          <p class="hint">Rate auto-fills for the purity. Today's shop rate alag ho sakta hai — confirm on WhatsApp.</p>
+          <p class="hint">Rates are set daily by Trikuta Fine Jewels. Final price confirmed at billing.</p>
           <div class="row2">
             <div><label id="wLbl">Metal Weight (grams)</label><input id="weight" type="number" min="0" step="0.01" value="10"></div>
-            <div><label>Making Charges (%)</label><input id="making" type="number" min="0" step="0.5" value="12"></div>
+            <div><label>Making Charges</label><div class="fixed"><span id="making">—</span><small>Fixed</small></div></div>
           </div>
           <div id="diaFields" style="display:none">
             <div class="row2">
@@ -485,10 +487,11 @@ const MAKING = {gold:12, silver:10, diamond:15};
 let metal='gold';
 const $=id=>document.getElementById(id);
 const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+function showRates(){ $('rate').textContent=inr(RATES[metal][$('purity').value]||0); $('making').textContent=(MAKING[metal]||0)+'%'; }
 function fillPurity(){
   const p=$('purity'); p.innerHTML=Object.keys(RATES[metal]).map(k=>`<option>${k}</option>`).join('');
   if(metal==='gold') p.value='22K (916)';
-  $('rate').value=RATES[metal][p.value]; $('making').value=MAKING[metal];
+  showRates();
   $('purityLbl').textContent=metal==='diamond'?'Set in':'Purity';
   $('wLbl').textContent=metal==='diamond'?'Gold Weight (grams)':'Metal Weight (grams)';
   $('diaFields').style.display=$('rowDia').style.display=metal==='diamond'?'':'none';
@@ -496,7 +499,7 @@ function fillPurity(){
   calc();
 }
 function calc(){
-  const w=+$('weight').value||0, r=+$('rate').value||0, mk=+$('making').value||0;
+  const w=+$('weight').value||0, r=+RATES[metal][$('purity').value]||0, mk=+MAKING[metal]||0;
   const mv=w*r, making=mv*mk/100;
   const dv=metal==='diamond'?(+$('ct').value||0)*(+$('ctPrice').value||0):0;
   const gst=(mv+making+dv)*0.03, total=mv+making+dv+gst;
@@ -511,8 +514,8 @@ function calc(){
 document.querySelectorAll('#ctabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#ctabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); metal=b.dataset.m; fillPurity();
 });
-$('purity').onchange=()=>{ $('rate').value=RATES[metal][$('purity').value]; calc(); };
-['rate','weight','making','ct','ctPrice'].forEach(id=>$(id).addEventListener('input',calc));
+$('purity').onchange=()=>{ showRates(); calc(); };
+['weight','ct','ctPrice'].forEach(id=>$(id).addEventListener('input',calc));
 fillPurity();
 // live rates from admin panel (rates.json)
 fetch('rates.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{

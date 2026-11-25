@@ -189,6 +189,18 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold)}
 .chip.dark{background:var(--ink);color:var(--gold-soft);border-color:var(--ink)}
 @media(max-width:900px){.materials{grid-template-columns:1fr}}
 
+
+/* team */
+.team{display:grid;grid-template-columns:320px 1fr;gap:48px;align-items:center;max-width:900px;margin:0 auto}
+.team-photo{position:relative;aspect-ratio:1/1.04;overflow:hidden;background:#2b2b2b}
+.team-photo::after{content:"";position:absolute;inset:12px;border:1px solid rgba(217,178,95,.55);pointer-events:none}
+.team-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.team .role{display:inline-block;background:var(--gold);color:#fff;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;padding:6px 12px;margin-bottom:14px}
+.team h3{font-size:2.3rem;margin-bottom:10px}
+.team p{color:#4a4037;margin-bottom:12px}
+.team .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+@media(max-width:900px){.team{grid-template-columns:1fr;gap:26px}.team-photo{max-width:300px;margin:0 auto}}
+
 /* calculator */
 .calc{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .calc-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:start}
@@ -435,6 +447,22 @@ footer a:hover{color:var(--gold-2)}
         <div class="t-item"><div class="yr">2020</div><div class="dot"></div><div class="txt"><h3>Mastering the metals</h3><p>Hands-on work across gold casting, silver craft and diamond setting.</p></div></div>
         <div class="t-item"><div class="yr">2023</div><div class="dot"></div><div class="txt"><h3>Own manufacturing unit</h3><p>Trikuta Fine Jewels begins manufacturing from Kinari Bazar, supplying local retailers.</p></div></div>
         <div class="t-item"><div class="yr">Today</div><div class="dot"></div><div class="txt"><h3>Wholesale &amp; retail</h3><p>Serving jewellers across India and walk-in customers with custom orders.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head"><div class="eyebrow">Our Expert</div><h2>Meet our diamond specialist</h2></div>
+      <div class="team">
+        <div class="team-photo"><img src="images/ca-sagar.jpg" alt="CA Sagar, Diamond Specialist at Trikuta Fine Jewels" loading="lazy" width="700" height="727"></div>
+        <div>
+          <span class="role">Diamond Specialist</span>
+          <h3>CA Sagar</h3>
+          <p>CA Sagar leads diamond selection at Trikuta Fine Jewels. He helps every customer choose the right stone — natural or lab-grown — and explains cut, colour, clarity and carat in simple words, so you know exactly what you are paying for.</p>
+          <p>As a Chartered Accountant, he also brings full transparency to pricing and billing, so every quote is clear and honest.</p>
+          <div class="chips"><span class="chip dark">Natural Diamonds</span><span class="chip dark">Lab-Grown (LGD)</span><span class="chip">Transparent Pricing</span></div>
+        </div>
       </div>
     </div>
   </section>

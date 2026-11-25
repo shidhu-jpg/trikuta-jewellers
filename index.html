@@ -125,9 +125,9 @@ section.block{padding:90px 0}
 .crumb{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-2);margin-top:18px}
 
 .story{display:grid;grid-template-columns:.9fr 1.1fr;gap:64px;align-items:center}
-.portrait{position:relative;aspect-ratio:4/5;background:linear-gradient(160deg,#2a211b,#14100c);display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.portrait{position:relative;aspect-ratio:3/4;background:radial-gradient(ellipse at 50% 35%,#2a2118 0%,#000 70%);display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
 .portrait::before{content:"";position:absolute;inset:16px;border:1px solid rgba(217,178,95,.45);z-index:2;pointer-events:none}
-.portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top}
 .portrait .badge{position:absolute;right:-1px;bottom:32px;z-index:3;background:var(--gold);color:#fff;padding:16px 22px;text-align:center}
 .portrait .badge b{display:block;font-family:'Cormorant Garamond';font-size:2.4rem;line-height:1}
 .portrait .badge span{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase}
@@ -243,6 +243,7 @@ footer a:hover{color:var(--gold-2)}
 
 /* responsive */
 @media(max-width:900px){
+  .portrait{max-width:380px;width:100%;margin:0 auto}
   .logo-text{font-size:1.2rem}
   .hero .wrap,.story,.contact-grid{grid-template-columns:1fr}
   .hero-art{order:-1}.hero-photo{max-width:300px;margin:10px auto 0}
@@ -418,7 +419,7 @@ footer a:hover{color:var(--gold-2)}
   <section class="block">
     <div class="wrap story">
       <div class="portrait">
-        <img src="https://images.unsplash.com/photo-1551346261-e19dd7ae9587?auto=format&fit=crop&w=900&q=75" alt="Gold and diamond rings crafted in our workshop" loading="lazy">
+        <img src="images/gaurav.jpg" alt="Gaurav, Founder of Trikuta Fine Jewels" loading="lazy" width="800" height="1067">
         <div class="badge"><b>7+</b><span>Years</span></div>
       </div>
       <div>

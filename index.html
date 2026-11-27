@@ -371,7 +371,7 @@ footer a:hover{color:var(--gold-2)}
             <div class="row2">
               <div><label>Diamond Rate (₹ / carat)</label><div class="fixed"><span id="ctRate">—</span><small>Fixed</small></div></div>
             </div>
-            <p class="hint">Exact diamond price depends on cut, colour, clarity and certificate.</p>
+            <p class="hint">Choose Natural or Lab-Grown (LGD). Exact price depends on cut, clarity and certificate.</p>
           </div>
         </div>
         <div class="result">
@@ -574,7 +574,7 @@ function fillPurity(){
   d.innerHTML=Object.keys(RATES.diamond).map(k=>`<option>${k}</option>`).join('');
   if(dk) d.value=dk;
   $('purityLbl').textContent=metal==='silver'?'Purity':'Gold Purity (Karat)';
-  $('colourWrap').style.visibility=metal==='silver'?'hidden':'visible';
+  $('colourWrap').style.display=metal==='gold'?'':'none';
   $('wLbl').textContent=metal==='diamond'?'Gold Weight (grams)':'Metal Weight (grams)';
   $('diaFields').style.display=$('rowDia').style.display=metal==='diamond'?'':'none';
   $('rdate').textContent='Rates as on '+RATES.date;
@@ -589,9 +589,9 @@ function calc(){
   $('vMetal').textContent=inr(mv); $('vMaking').textContent=inr(making);
   $('vDia').textContent=metal==='diamond'&&!dr?'On request':inr(dv);
   $('vGst').textContent=inr(gst); $('vTotal').textContent=inr(total)+(metal==='diamond'&&!dr?' + diamond':'');
-  const colour=metal==='silver'?'':$('colour').value+' ';
-  $('lMetal').textContent=(metal==='silver'?'Silver':colour.trim())+' ('+w+' g × '+inr(r)+')';
-  let msg=`Hi Trikuta Fine Jewels, I want a quote:%0A${encodeURIComponent(colour+(metal==='silver'?'Silver ':'')+$('purity').value)}%0AWeight: ${w} g`;
+  const colour=metal==='gold'?$('colour').value+' ':'';
+  $('lMetal').textContent=(metal==='silver'?'Silver':metal==='diamond'?'Gold':colour.trim())+' ('+w+' g × '+inr(r)+')';
+  let msg=`Hi Trikuta Fine Jewels, I want a quote:%0A${encodeURIComponent(colour+(metal==='silver'?'Silver ':metal==='diamond'?'Diamond jewellery – Gold ':'')+$('purity').value)}%0AWeight: ${w} g`;
   if(metal==='diamond') msg+=`%0A${encodeURIComponent($('dtype').value)}: ${ct} ct`;
   msg+=`%0AWebsite estimate: ${encodeURIComponent($('vTotal').textContent)}`;
   $('calcWa').href='https://wa.me/919711825830?text='+msg;
